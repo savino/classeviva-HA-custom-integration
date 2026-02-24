@@ -10,10 +10,11 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for the
 | **Grades** | Average grade sensor with the 10 most recent grades as attributes |
 | **Absences** | Count of unjustified absences with full list in attributes |
 | **Noticeboard (Bacheca)** | Count of notices with unread count highlighted |
-| **Didactics (Area Didattica)** | Count of educational items grouped by teacher/folder |
-| **Next Agenda Event** | Sensor showing the next upcoming event from the student's agenda |
+| **Didactics (Area Didattica)** | Count of educational items; new attachments are **auto-downloaded** and served locally; download link available in sensor attributes and in the dashboard card |
+| **Next Agenda Event** | Sensor showing the next 10 upcoming events, with a `student_relevant` flag when the student's name is mentioned |
 | **Calendar** | Full agenda exposed as a Home Assistant calendar entity (compatible with iCal) |
 | **Notifications** | Home Assistant events fired whenever new content is detected (usable in automations) |
+| **Dashboard card** | Custom Lovelace card showing grades, noticeboard notices, agenda events and didactic materials in one place |
 
 ## Installation
 
@@ -49,8 +50,8 @@ Multiple student accounts can be configured simultaneously.
 | `sensor.<name>_average_grade` | Numeric average of all grades | `recent_grades` list |
 | `sensor.<name>_unjustified_absences` | Count | `absences` list, `total_absences` |
 | `sensor.<name>_noticeboard_notices` | Total count | `unread_count`, `notices` list |
-| `sensor.<name>_didactics_items` | Total item count | `folders` list |
-| `sensor.<name>_next_agenda_event` | Event summary | `begin`, `end`, `subject`, `author`, `type` |
+| `sensor.<name>_didactics_items` | Total item count | `folders` list, `items` list (each with `local_url`) |
+| `sensor.<name>_next_agenda_event` | Event summary | `begin`, `end`, `subject`, `author`, `type`, `student_relevant`, `upcoming_events` (next 10) |
 
 ### Calendar
 
@@ -59,6 +60,53 @@ Multiple student accounts can be configured simultaneously.
 You can subscribe to this calendar from any iCal-compatible client via the
 Home Assistant **Calendar** integration's export URL, or use the built-in
 **Calendar** dashboard card.
+
+## Dashboard Card (Lovelace)
+
+The integration provides a custom Lovelace card that shows grades, noticeboard
+notices, upcoming agenda events (with student-relevant ones highlighted) and
+didactic materials with download links.
+
+### Register the card resource
+
+Add the following to your Lovelace **Resources** (Settings → Dashboards → ⋮ → Resources):
+
+| URL | Type |
+|---|---|
+| `/classeviva_card/classeviva-card.js` | JavaScript module |
+
+### Card configuration
+
+```yaml
+type: custom:classeviva-card
+title: "Mario Rossi – ClasseViva"
+grades_entity: sensor.average_grade
+noticeboard_entity: sensor.noticeboard_notices
+agenda_entity: sensor.next_agenda_event
+didactics_entity: sensor.didactics_items
+```
+
+All four entity properties are optional – omit any section you don't need.
+
+## Didactic content local storage
+
+When new files are detected in the *Area Didattica*, the integration
+automatically downloads them and stores them in:
+
+```
+<config>/www/classeviva_didactics/<item_id>/<filename>
+```
+
+Files are accessible in the browser at `/local/classeviva_didactics/…` and the
+download URL is exposed in `sensor.<name>_didactics_items` attributes
+(`items[*].local_url`).
+
+Files older than **60 days** are removed automatically on every poll.  You can
+also trigger an immediate cleanup via the service call:
+
+```yaml
+service: classeviva.cleanup_didactics_storage
+```
 
 ## Home Assistant Events (Notifications)
 
@@ -71,6 +119,7 @@ notifications, emails, etc.
 | `classeviva_new_didactics` | New file/link in Area Didattica | `teacher`, `folder`, `item_name`, `share_date` |
 | `classeviva_new_noticeboard` | New notice on the Bacheca | `title`, `author`, `category`, `begin` |
 | `classeviva_new_agenda` | New entry in the student's agenda | `notes`, `author`, `subject`, `begin`, `end` |
+| `classeviva_student_agenda_event` | New agenda event that mentions the student's last name | `notes`, `author`, `subject`, `begin`, `end` |
 
 ### Example automation – push notification on new notice
 
@@ -87,22 +136,19 @@ automation:
           message: "{{ trigger.event.data.title }} — {{ trigger.event.data.author }}"
 ```
 
-### Example automation – notify when agenda mentions a student's name
+### Example automation – notify when an agenda event specifically mentions the student
 
 ```yaml
 automation:
-  - alias: "Notify agenda event mentioning Mario"
+  - alias: "Notify personal agenda event"
     trigger:
       - platform: event
-        event_type: classeviva_new_agenda
-    condition:
-      - condition: template
-        value_template: "{{ 'Mario' in (trigger.event.data.notes | default('')) }}"
+        event_type: classeviva_student_agenda_event
     action:
       - service: notify.mobile_app_my_phone
         data:
-          title: "New agenda event"
-          message: "{{ trigger.event.data.notes }}"
+          title: "Agenda – evento personale"
+          message: "{{ trigger.event.data.subject }}: {{ trigger.event.data.notes }}"
 ```
 
 ## Update Interval
@@ -121,6 +167,7 @@ The integration calls the following Spaggiari REST API endpoints:
 - `GET /students/{id}/agenda/all/{begin}/{end}` – agenda (30-day window)
 - `GET /students/{id}/didactics` – area didattica
 - `GET /students/{id}/noticeboard` – bacheca
+- `GET /students/{id}/didactics/item/{contentId}` – didactic attachment download
 
 ## License
 

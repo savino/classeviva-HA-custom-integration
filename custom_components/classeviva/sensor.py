@@ -224,17 +224,31 @@ class ClasseVivaDidacticsSensor(ClasseVivaBaseSensor):
     def extra_state_attributes(self) -> dict[str, Any]:
         teachers = self.coordinator.data.get("didactics", [])
         folders: list[dict] = []
+        items: list[dict] = []
         for teacher in teachers:
+            teacher_name = teacher.get("teacherName")
             for folder in teacher.get("folders", []):
+                folder_name = folder.get("folderName")
                 folders.append(
                     {
-                        "teacher": teacher.get("teacherName"),
-                        "folder": folder.get("folderName"),
+                        "teacher": teacher_name,
+                        "folder": folder_name,
                         "items": len(folder.get("agendaItems", [])),
                         "last_updated": folder.get("lastShareDt"),
                     }
                 )
-        return {"folders": folders}
+                for item in folder.get("agendaItems", []):
+                    items.append(
+                        {
+                            "teacher": teacher_name,
+                            "folder": folder_name,
+                            "item_id": item.get("itemId") or item.get("contentId"),
+                            "name": item.get("displayName") or item.get("itemName"),
+                            "share_date": item.get("shareDt"),
+                            "local_url": item.get("local_url"),
+                        }
+                    )
+        return {"folders": folders, "items": items}
 
 
 # ---------------------------------------------------------------------------
@@ -269,14 +283,31 @@ class ClasseVivaNextAgendaSensor(ClasseVivaBaseSensor):
             self.coordinator.data.get("agenda", []),
             key=lambda e: e.get("evtDatetimeBegin", ""),
         )
-        if not events:
-            return {}
-        e = events[0]
-        return {
-            "begin": e.get("evtDatetimeBegin"),
-            "end": e.get("evtDatetimeEnd"),
-            "subject": e.get("subjectDesc"),
-            "author": e.get("authorName"),
-            "type": e.get("evtCode"),
-            "full_day": e.get("isFullDay"),
-        }
+        next_event_attrs: dict[str, Any] = {}
+        if events:
+            e = events[0]
+            next_event_attrs = {
+                "begin": e.get("evtDatetimeBegin"),
+                "end": e.get("evtDatetimeEnd"),
+                "subject": e.get("subjectDesc"),
+                "author": e.get("authorName"),
+                "type": e.get("evtCode"),
+                "full_day": e.get("isFullDay"),
+                "student_relevant": e.get("student_relevant", False),
+            }
+        # Expose the next 10 upcoming events so the dashboard card can show
+        # a full list without requiring extra API calls.
+        upcoming = [
+            {
+                "begin": e.get("evtDatetimeBegin"),
+                "end": e.get("evtDatetimeEnd"),
+                "subject": e.get("subjectDesc"),
+                "notes": e.get("notes"),
+                "author": e.get("authorName"),
+                "type": e.get("evtCode"),
+                "full_day": e.get("isFullDay"),
+                "student_relevant": e.get("student_relevant", False),
+            }
+            for e in events[:10]
+        ]
+        return {**next_event_attrs, "upcoming_events": upcoming}
