@@ -135,3 +135,24 @@ class ClasseVivaAPI:
         """Return the student's noticeboard (bacheca)."""
         data = await self._get("noticeboard")
         return data.get("items", [])
+
+    async def download_didactic_content(self, content_id: int | str) -> bytes | None:
+        """Download the binary content of a didactic attachment.
+
+        Returns raw bytes on success, or ``None`` if the content is unavailable.
+        Re-authenticates once if the token has expired.
+        """
+        url = self._base_student_url() + f"/didactics/item/{content_id}"
+        async with self._session.get(url, headers=self._auth_headers()) as resp:
+            content_type = resp.headers.get("Content-Type", "")
+            if resp.status == 200 and "application/json" not in content_type:
+                return await resp.read()
+            # Try to parse error payload; handle token expiry
+            try:
+                data = await resp.json(content_type=None)
+            except Exception:  # noqa: BLE001
+                return None
+            if "auth token expired" in data.get("error", "").lower():
+                await self.login()
+                return await self.download_didactic_content(content_id)
+            return None

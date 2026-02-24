@@ -66,6 +66,7 @@ _const.CONF_PASSWORD = "password"  # type: ignore[attr-defined]
 
 _core = sys.modules["homeassistant.core"]
 _core.HomeAssistant = object  # type: ignore[attr-defined]
+_core.ServiceCall = object  # type: ignore[attr-defined]
 
 _aio = sys.modules["homeassistant.helpers.aiohttp_client"]
 _aio.async_get_clientsession = MagicMock()  # type: ignore[attr-defined]
