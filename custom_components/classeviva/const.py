@@ -7,7 +7,7 @@ BASE_URL = "https://web.spaggiari.eu/rest/v1"
 CONF_STUDENT_NAME = "student_name"
 
 # Default polling interval in minutes
-DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_SCAN_INTERVAL = 60
 
 # Platforms to set up
 PLATFORMS = ["sensor", "calendar"]

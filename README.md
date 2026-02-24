@@ -107,7 +107,7 @@ automation:
 
 ## Update Interval
 
-Data is refreshed every **30 minutes** by default. This is intentional to
+Data is refreshed every **60 minutes** by default. This is intentional to
 avoid overloading the Spaggiari servers. If you need faster updates you can
 call the `homeassistant.update_entity` service on the relevant entities.
 
