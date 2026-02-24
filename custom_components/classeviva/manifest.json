@@ -1,0 +1,11 @@
+{
+  "domain": "classeviva",
+  "name": "ClasseViva",
+  "codeowners": ["@savino"],
+  "config_flow": true,
+  "documentation": "https://github.com/savino/classeviva-HA-custom-integration",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.0.0"
+}

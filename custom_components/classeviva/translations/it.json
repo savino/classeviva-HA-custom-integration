@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ClasseViva Login",
+        "description": "Inserisci le credenziali Spaggiari / ClasseViva.",
+        "data": {
+          "username": "Nome utente (o email)",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Nome utente o password non validi.",
+      "cannot_connect": "Impossibile connettersi al server ClasseViva.",
+      "unknown": "Si è verificato un errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo account studente è già configurato."
+    }
+  }
+}
