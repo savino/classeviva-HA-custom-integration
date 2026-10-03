@@ -1,10 +1,14 @@
 """Constants for the ClasseViva integration."""
 
 DOMAIN = "classeviva"
-BASE_URL = "https://web.spaggiari.eu/rest/v1"
+BASE_URL = "https://web.spaggiari.eu/rest/w1"
+AUTH_URL = "https://web.spaggiari.eu/auth-p7/app/default/AuthApi4.php?a=aLoginPwd"
 
 # Configuration keys
 CONF_STUDENT_NAME = "student_name"
+CONF_SCHOOL_CODE = "school_code"
+CONF_PIN = "pin"
+CONF_TARGET = "target"
 
 # Default polling interval in minutes
 DEFAULT_SCAN_INTERVAL = 60

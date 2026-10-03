@@ -16,6 +16,12 @@ env/
 # Pytest cache
 .pytest_cache/
 
+# Playwright mcp
+.playwright-mcp/
+
+# Local ClasseViva credentials
+.classeviva.local.json
+
 # Editor
 .idea/
 .vscode/

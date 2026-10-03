@@ -7,9 +7,10 @@
 
 ## API/client conventions
 - `ClasseVivaAPI` is a thin async wrapper using shared aiohttp session from HA (`async_get_clientsession`).
-- Authentication details are Spaggiari-specific headers (`User-Agent: zorro/1.0`, `Z-Dev-Apikey: +zorro+`) and token in `Z-Auth-Token` (`api.py`).
-- Preserve token-expiry retry behavior in `_get`/`_post`: on `"auth token expired"`, call `login()` and retry once via recursion.
-- Preserve known upstream quirk: didactics may arrive under `didacticts` (typo) or `didactics` (`api.py::didactics`).
+- Login posts `uid`, `pwd`, `cid`, optional `pin`, and `target` to `AuthApi4.php?a=aLoginPwd`; API requests use the returned session cookies.
+- Resolve the numeric student ID and names from `/misc/whoami`; use `gradesYY` for the current school year and `agendav2/all/{from}/{to}` for agenda.
+- `_get` retries once after an HTTP authorization failure by authenticating again.
+- Preserve the `didacticts` response-key typo and normalize documented `contents` fields for coordinator/entity readers.
 
 ## Coordinator/event behavior
 - `ClasseVivaCoordinator` polls grades, absences, agenda (30-day lookahead), didactics, noticeboard in a single `_async_update_data` call.

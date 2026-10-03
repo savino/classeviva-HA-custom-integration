@@ -3,10 +3,13 @@
     "step": {
       "user": {
         "title": "ClasseViva Login",
-        "description": "Inserisci le credenziali Spaggiari / ClasseViva.",
+        "description": "Inserisci le credenziali ClasseViva e il codice scuola.",
         "data": {
           "username": "Nome utente (o email)",
-          "password": "Password"
+          "password": "Password",
+          "school_code": "Codice scuola",
+          "pin": "PIN (se impostato)",
+          "target": "Tipo di account (genitore o studente)"
         }
       }
     },
@@ -16,7 +19,8 @@
       "unknown": "Si è verificato un errore imprevisto."
     },
     "abort": {
-      "already_configured": "Questo account studente è già configurato."
+      "already_configured": "Questo account studente è già configurato.",
+      "reconfigure_successful": "Configurazione ClasseViva aggiornata."
     }
   }
 }

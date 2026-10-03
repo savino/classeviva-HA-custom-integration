@@ -3,10 +3,13 @@
     "step": {
       "user": {
         "title": "ClasseViva Login",
-        "description": "Enter your Spaggiari / ClasseViva credentials.",
+        "description": "Enter your ClasseViva credentials and school code.",
         "data": {
           "username": "Username (or email)",
-          "password": "Password"
+          "password": "Password",
+          "school_code": "School code",
+          "pin": "PIN (if set)",
+          "target": "Account type (parent or student)"
         }
       }
     },
@@ -16,7 +19,8 @@
       "unknown": "An unexpected error occurred."
     },
     "abort": {
-      "already_configured": "This student account is already configured."
+      "already_configured": "This student account is already configured.",
+      "reconfigure_successful": "ClasseViva configuration updated."
     }
   }
 }

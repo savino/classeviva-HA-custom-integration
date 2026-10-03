@@ -111,9 +111,9 @@ class ClasseVivaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     EVENT_NEW_NOTICEBOARD,
                     {
                         "title": item.get("cntTitle"),
-                        "author": item.get("cntAuthor"),
+                        "author": item.get("cntAuthor") or item.get("authorName"),
                         "category": item.get("cntCategory"),
-                        "begin": item.get("evtBegin"),
+                        "begin": item.get("cntValidFrom") or item.get("evtBegin"),
                     },
                 )
 
@@ -167,7 +167,11 @@ class ClasseVivaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for folder in teacher.get("folders", []):
                 for item in folder.get("agendaItems", []):
                     item_id = item.get("itemId") or item.get("contentId")
-                    if item_id is None or self._storage.has_content(item_id):
+                    if (
+                        item_id is None
+                        or item.get("objectType", "file") != "file"
+                        or self._storage.has_content(item_id)
+                    ):
                         continue
                     content_id = item.get("contentId") or item.get("itemId")
                     try:

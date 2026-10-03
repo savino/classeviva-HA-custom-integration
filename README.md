@@ -32,14 +32,58 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for the
    `config/custom_components/` directory.
 2. Restart Home Assistant.
 
+## Terminal Client
+
+The API client can also be used from a regular Python environment without
+running Home Assistant. From the project checkout, install its dependency:
+
+```sh
+python -m pip install -r requirements_cli.txt
+```
+
+Create `.classeviva.local.json` in the project root and enter your credentials
+and school code there:
+
+```json
+{
+  "username": "your-username",
+  "password": "your-password",
+  "school_code": "your-school-code",
+  "target": "genitori",
+  "pin": ""
+}
+```
+
+This file is ignored by Git. The CLI reads it by default; environment variables
+`CLASSEVIVA_USERNAME`, `CLASSEVIVA_PASSWORD`, `CLASSEVIVA_CID`,
+`CLASSEVIVA_PIN`, and `CLASSEVIVA_TARGET` take precedence. Missing username,
+password, and school code are prompted interactively. `target` is `genitori` or
+`studenti` and defaults to `genitori`. You can also select another settings file
+with `--settings`:
+
+```sh
+python -m custom_components.classeviva.cli grades
+python -m custom_components.classeviva.cli agenda --begin 2026-09-30 --end 2026-10-30
+python -m custom_components.classeviva.cli download 12345 --output ./lesson.pdf
+```
+
+Available data commands are `grades`, `absences`, `agenda`, `didactics`, and
+`noticeboard`. Data is printed as JSON. The password is intentionally not
+accepted as a command-line argument. The terminal client calls the API
+directly, so Home Assistant-specific polling, events, and entity behavior are
+not involved.
+
 ## Configuration
 
 1. Go to **Settings → Devices & Services → Add Integration**.
 2. Search for **ClasseViva**.
-3. Enter your **ClasseViva username** (or email) and **password**.
+3. Enter your **ClasseViva username** (or email), **password**, **school code**,
+   and account type. Enter a PIN only if your account has one.
 4. The integration will create a device with all sensor and calendar entities.
 
 Multiple student accounts can be configured simultaneously.
+Existing entries can be updated with the integration's **Reconfigure** action
+to add the school code and account type required by the current API.
 
 ## Entities
 
@@ -159,15 +203,19 @@ call the `homeassistant.update_entity` service on the relevant entities.
 
 ## Supported API Endpoints
 
-The integration calls the following Spaggiari REST API endpoints:
+The integration follows the community-documented `/rest/w1` API:
 
-- `POST /auth/login/` – authentication
-- `GET /students/{id}/grades` – grades
+- `POST /auth-p7/app/default/AuthApi4.php?a=aLoginPwd` – form-based authentication
+- `GET /misc/whoami` – numeric student ID and account details
+- `GET /students/{id}/grades{YY}` – grades for the current school year
 - `GET /students/{id}/absences/details` – absences
-- `GET /students/{id}/agenda/all/{begin}/{end}` – agenda (30-day window)
+- `GET /students/{id}/agendav2/all/{begin}/{end}` – agenda (30-day window)
 - `GET /students/{id}/didactics` – area didattica
 - `GET /students/{id}/noticeboard` – bacheca
-- `GET /students/{id}/didactics/item/{contentId}` – didactic attachment download
+
+The didactic item-download route used for automatic caching is not documented
+by `open-viva/endpoints`; it remains best-effort and may not work with every
+account or server version.
 
 ## License
 

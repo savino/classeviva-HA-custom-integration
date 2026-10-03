@@ -3,15 +3,13 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant, ServiceCall
 
-from .api import ClasseVivaAPI
 from .const import DOMAIN, PLATFORMS, SERVICE_CLEANUP_DIDACTICS
-from .coordinator import ClasseVivaCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,9 +19,21 @@ _CARD_URL_PATH = "/classeviva_card"
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ClasseViva from a config entry."""
+    from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    from .api import ClasseVivaAPI
+    from .const import CONF_PIN, CONF_SCHOOL_CODE, CONF_TARGET
+    from .coordinator import ClasseVivaCoordinator
+
     session = async_get_clientsession(hass)
     api = ClasseVivaAPI(
-        entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], session
+        entry.data[CONF_USERNAME],
+        entry.data[CONF_PASSWORD],
+        session,
+        school_code=entry.data.get(CONF_SCHOOL_CODE, ""),
+        pin=entry.data.get(CONF_PIN, ""),
+        target=entry.data.get(CONF_TARGET, "genitori"),
     )
     await api.login()
 

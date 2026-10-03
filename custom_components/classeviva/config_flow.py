@@ -12,7 +12,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import AuthenticationError, ClasseVivaAPI
-from .const import DOMAIN
+from .const import CONF_PIN, CONF_SCHOOL_CODE, CONF_TARGET, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +20,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_SCHOOL_CODE): str,
+        vol.Optional(CONF_PIN, default=""): str,
+        vol.Required(CONF_TARGET, default="genitori"): vol.In(("genitori", "studenti")),
     }
 )
 
@@ -38,7 +41,12 @@ class ClasseVivaConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             session = async_get_clientsession(self.hass)
             api = ClasseVivaAPI(
-                user_input[CONF_USERNAME], user_input[CONF_PASSWORD], session
+                user_input[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+                session,
+                school_code=user_input[CONF_SCHOOL_CODE],
+                pin=user_input[CONF_PIN],
+                target=user_input[CONF_TARGET],
             )
             try:
                 info = await api.login()
@@ -59,6 +67,46 @@ class ClasseVivaConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Update credentials for an existing entry after an API migration."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            session = async_get_clientsession(self.hass)
+            api = ClasseVivaAPI(
+                user_input[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+                session,
+                school_code=user_input[CONF_SCHOOL_CODE],
+                pin=user_input[CONF_PIN],
+                target=user_input[CONF_TARGET],
+            )
+            try:
+                info = await api.login()
+            except AuthenticationError:
+                errors["base"] = "invalid_auth"
+            except aiohttp.ClientError:
+                errors["base"] = "cannot_connect"
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception("Unexpected error during ClasseViva reconfiguration")
+                errors["base"] = "unknown"
+            else:
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    data=user_input,
+                    title=f"{info['first_name']} {info['last_name']}",
+                )
+                return self.async_abort(reason="reconfigure_successful")
+
+        return self.async_show_form(
+            step_id="reconfigure",
             data_schema=STEP_USER_DATA_SCHEMA,
             errors=errors,
         )

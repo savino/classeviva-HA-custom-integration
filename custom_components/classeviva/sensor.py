@@ -184,9 +184,9 @@ class ClasseVivaNoticeboardSensor(ClasseVivaBaseSensor):
             "notices": [
                 {
                     "title": i.get("cntTitle"),
-                    "author": i.get("cntAuthor"),
+                    "author": i.get("cntAuthor") or i.get("authorName"),
                     "category": i.get("cntCategory"),
-                    "begin": i.get("evtBegin"),
+                    "begin": i.get("cntValidFrom") or i.get("evtBegin"),
                     "read": i.get("readStatus", False),
                     "has_attachment": bool(i.get("attachments")),
                 }
