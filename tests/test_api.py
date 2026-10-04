@@ -80,6 +80,40 @@ async def test_login_uses_form_cookies_and_whoami():
 
 
 @pytest.mark.asyncio
+async def test_login_accepts_verified_php_session_without_optional_fields():
+    """Password-only login may return PHPSESSID and the school code in its payload."""
+    session = MagicMock()
+    session.post = MagicMock(
+        return_value=_response(
+            {
+                "data": {
+                    "auth": {
+                        "verified": True,
+                        "loggedIn": True,
+                        "accountInfo": {"cid": "school"},
+                    }
+                }
+            },
+            cookies={"PHPSESSID": "sid"},
+        )
+    )
+    session.get = MagicMock(return_value=_response({
+        "id": "13000000", "nome": "MARIO", "cognome": "ROSSI"
+    }))
+    api = ClasseVivaAPI("student", "secret", session)
+
+    info = await api.login()
+
+    session.post.assert_called_once_with(
+        AUTH_URL,
+        data={"uid": "student", "pwd": "secret"},
+    )
+    assert session.get.call_args.kwargs["cookies"] == {"PHPSESSID": "sid"}
+    assert api._school_code == "school"
+    assert info == {"id": "13000000", "first_name": "MARIO", "last_name": "ROSSI"}
+
+
+@pytest.mark.asyncio
 async def test_login_failure():
     """login() raises AuthenticationError on bad credentials."""
     session = MagicMock()

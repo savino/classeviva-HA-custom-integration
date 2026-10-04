@@ -23,7 +23,7 @@ class ClasseVivaAPI:
         session: aiohttp.ClientSession,
         school_code: str = "",
         pin: str = "",
-        target: str = "genitori",
+        target: str | None = None,
     ) -> None:
         self._username = username
         self._password = password
@@ -50,24 +50,48 @@ class ClasseVivaAPI:
         form = {
             "uid": self._username,
             "pwd": self._password,
-            "cid": self._school_code,
-            "target": self._target,
         }
+        if self._school_code:
+            form["cid"] = self._school_code
         if self._pin:
             form["pin"] = self._pin
+        if self._target:
+            form["target"] = self._target
 
         async with self._session.post(AUTH_URL, data=form) as resp:
             self._cookies = {
                 name: cookie.value for name, cookie in resp.cookies.items()
             }
-            if resp.status >= 400 or not self._cookies.get("webidentity"):
-                try:
-                    data = await resp.json(content_type=None)
-                except (aiohttp.ContentTypeError, ValueError):
-                    data = {}
-                if "authentication failed" in data.get("error", "").lower():
+            try:
+                data = await resp.json(content_type=None)
+            except (aiohttp.ContentTypeError, ValueError):
+                data = {}
+
+            auth = data.get("data", {}).get("auth", {}) if isinstance(data, dict) else {}
+            verified_login = (
+                isinstance(auth, dict)
+                and auth.get("verified") is True
+                and auth.get("loggedIn") is True
+            )
+            account_info = auth.get("accountInfo") if isinstance(auth, dict) else None
+            if not self._school_code and isinstance(account_info, dict):
+                school_code = account_info.get("cid")
+                if isinstance(school_code, str):
+                    self._school_code = school_code
+            has_session = bool(
+                self._cookies.get("webidentity") or self._cookies.get("PHPSESSID")
+            )
+            if (
+                resp.status >= 400
+                or not has_session
+                or (not self._cookies.get("webidentity") and not verified_login)
+            ):
+                error = data.get("error", "") if isinstance(data, dict) else ""
+                if isinstance(error, str) and "authentication failed" in error.lower():
                     raise AuthenticationError("Invalid ClasseViva credentials")
-                raise AuthenticationError("ClasseViva login did not return session cookies")
+                raise AuthenticationError(
+                    "ClasseViva login did not return a verified session"
+                )
 
         data = await self._get("misc", "whoami", student=False, retry=False)
         if not data.get("id"):

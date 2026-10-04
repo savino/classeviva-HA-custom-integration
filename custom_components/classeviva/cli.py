@@ -36,8 +36,20 @@ def _load_settings(path: Path) -> dict[str, str]:
         raise ValueError("settings file must contain a JSON object")
 
     credentials: dict[str, str] = {}
-    for key in ("username", "password", "school_code", "pin", "target"):
-        value = settings.get(key, "")
+    aliases = {
+        "username": ("username",),
+        "password": ("password",),
+        "school_code": ("school_code", "cid", "id"),
+        "pin": ("pin",),
+        "target": ("target",),
+    }
+    for key, names in aliases.items():
+        value = ""
+        for name in names:
+            candidate = settings.get(name)
+            if candidate is not None:
+                value = candidate
+                break
         if not isinstance(value, str):
             raise ValueError(f"settings field '{key}' must be a string")
         credentials[key] = value
@@ -89,11 +101,9 @@ async def _run(args: argparse.Namespace) -> int:
     password = os.environ.get("CLASSEVIVA_PASSWORD") or settings.get("password")
     if not password:
         password = getpass.getpass("ClasseViva password: ")
-    school_code = os.environ.get("CLASSEVIVA_CID") or settings.get("school_code")
-    if not school_code:
-        school_code = input("ClasseViva school code: ")
+    school_code = os.environ.get("CLASSEVIVA_CID") or settings.get("school_code", "")
     pin = os.environ.get("CLASSEVIVA_PIN") or settings.get("pin", "")
-    target = os.environ.get("CLASSEVIVA_TARGET") or settings.get("target") or "genitori"
+    target = os.environ.get("CLASSEVIVA_TARGET") or settings.get("target") or None
 
     async with aiohttp.ClientSession() as session:
         api = ClasseVivaAPI(

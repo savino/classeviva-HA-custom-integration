@@ -41,25 +41,22 @@ running Home Assistant. From the project checkout, install its dependency:
 python -m pip install -r requirements_cli.txt
 ```
 
-Create `.classeviva.local.json` in the project root and enter your credentials
-and school code there:
+Create `.classeviva.local.json` in the project root and enter your credentials:
 
 ```json
 {
   "username": "your-username",
-  "password": "your-password",
-  "school_code": "your-school-code",
-  "target": "genitori",
-  "pin": ""
+  "password": "your-password"
 }
 ```
 
 This file is ignored by Git. The CLI reads it by default; environment variables
 `CLASSEVIVA_USERNAME`, `CLASSEVIVA_PASSWORD`, `CLASSEVIVA_CID`,
-`CLASSEVIVA_PIN`, and `CLASSEVIVA_TARGET` take precedence. Missing username,
-password, and school code are prompted interactively. `target` is `genitori` or
-`studenti` and defaults to `genitori`. You can also select another settings file
-with `--settings`:
+`CLASSEVIVA_PIN`, and `CLASSEVIVA_TARGET` take precedence. Missing username and
+password are prompted interactively. The server can resolve the school code
+from the username/password login; `school_code`, `pin`, and `target` are
+optional settings overrides. You can also select another settings file with
+`--settings`:
 
 ```sh
 python -m custom_components.classeviva.cli grades
@@ -83,7 +80,7 @@ not involved.
 
 Multiple student accounts can be configured simultaneously.
 Existing entries can be updated with the integration's **Reconfigure** action
-to add the school code and account type required by the current API.
+to update the account settings.
 
 ## Entities
 

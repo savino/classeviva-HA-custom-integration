@@ -35,6 +35,28 @@ def test_load_settings(tmp_path: Path) -> None:
     }
 
 
+def test_load_settings_accepts_legacy_aliases(tmp_path: Path) -> None:
+    """Support older local-config names such as 'id' or 'cid'."""
+    settings_path = tmp_path / "legacy-settings.json"
+    settings_path.write_text(
+        json.dumps({
+            "username": "student",
+            "password": "secret",
+            "id": "legacy-school",
+            "pin": "1234",
+        }),
+        encoding="utf-8",
+    )
+
+    assert _load_settings(settings_path) == {
+        "username": "student",
+        "password": "secret",
+        "school_code": "legacy-school",
+        "pin": "1234",
+        "target": "",
+    }
+
+
 def test_api_and_cli_import_without_homeassistant() -> None:
     """The shared API and CLI modules do not require Home Assistant."""
     code = """

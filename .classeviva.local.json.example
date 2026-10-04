@@ -1,0 +1,7 @@
+{
+  "username": "YOUR_USERNAME",
+  "password": "YOUR_PASSWORD",
+  "school_code": "YOUR_SCHOOL_CODE",
+  "pin": "OPTIONAL_PIN",
+  "target": "genitori"
+}
